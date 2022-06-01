@@ -51,6 +51,26 @@ async function run() {
     res.json(result);
   });
 
+      //Single events PUT API
+      app.put("/events/:id", async (req, res) => {
+        const id = req.params.id;
+        const event = req.body;
+        console.log("event", event);
+        const filter = { _id: ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            title: event.title,
+            desc: event.desc,
+            banner: event.banner,
+            date: event.date,
+          },
+        };
+        const result = await eventCollection.updateOne(filter, updateDoc, options);
+        console.log("result", result);
+        res.json(result);
+      });
+
     //register Single GET API
     app.get("/register", async (req, res) => {
       const query = {};
@@ -87,22 +107,6 @@ async function run() {
       res.json(result);
     });
 
-    //Single PUT API
-    app.put("/users/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: ObjectId(id) };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: {
-          name: req.body.name,
-          partner: req.body.partner,
-          img: req.body.img,
-        },
-      };
-      const result = await eventCollection.updateOne(filter, updateDoc, options);
-      console.log("id", result);
-      res.json(result);
-    });
   } finally {
     // await client.close();
   }
