@@ -52,6 +52,13 @@ async function run() {
   });
 
     //register Single GET API
+    app.get("/register", async (req, res) => {
+      const query = {};
+      const result = await eventRegisterCollection.find(query).toArray();
+      console.log("result", result);
+      res.json(result);
+    });
+    //register Single GET by email API
     app.get("/register/:email", async (req, res) => {
       const email = req?.params?.email;
       // console.log(email);
