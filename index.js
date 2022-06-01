@@ -35,7 +35,7 @@ async function run() {
 
     // events Single GET API
     app.get("/events/:id", async (req, res) => {
-      const id = req.params.id;
+      const id = req?.params?.id;
       const query = { _id: ObjectId(id) };
       const result = await eventCollection.findOne(query);
       console.log("id", result);
@@ -50,6 +50,16 @@ async function run() {
     console.log("result", result);
     res.json(result);
   });
+
+    //register DELETE API
+    app.delete("/events/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log("id", id)
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection.deleteOne(query);
+      console.log("id", result);
+      res.json(result);
+    });
 
       //Single events PUT API
       app.put("/events/:id", async (req, res) => {
