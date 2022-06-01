@@ -26,14 +26,14 @@ async function run() {
     const database = client.db("humanityHand");
     const eventCollection = database.collection("events");
     const eventRegisterCollection = database.collection("eventRegister");
-    // GET API
+    // events GET API
     app.get("/events", async (req, res) => {
       const cursor = eventCollection.find({});
       const events = await cursor.toArray();
       res.send(events);
     });
 
-    //Single GET API
+    // events Single GET API
     app.get("/events/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -42,7 +42,7 @@ async function run() {
       res.json(result);
     });
 
-  //POST API
+  // events POST API
   app.post("/events", async (req, res) => {
     const newEvent = req.body;
     const result = await eventCollection.insertOne(newEvent);
@@ -51,7 +51,7 @@ async function run() {
     res.json(result);
   });
 
-    //Single GET API
+    //register Single GET API
     app.get("/register/:email", async (req, res) => {
       const email = req?.params?.email;
       // console.log(email);
@@ -61,7 +61,7 @@ async function run() {
       res.json(result);
     });
 
-    //POST API
+    //register POST API
     app.post("/register", async (req, res) => {
       const newEventRegister = req.body;
       const result = await eventRegisterCollection.insertOne(newEventRegister);
@@ -70,11 +70,12 @@ async function run() {
       res.json(result);
     });
 
-    //DELETE API
-    app.delete("/users/:id", async (req, res) => {
+    //register DELETE API
+    app.delete("/register/:id", async (req, res) => {
       const id = req.params.id;
+      console.log("id", id)
       const query = { _id: ObjectId(id) };
-      const result = await eventCollection.deleteOne(query);
+      const result = await eventRegisterCollection.deleteOne(query);
       console.log("id", result);
       res.json(result);
     });
