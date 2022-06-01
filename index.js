@@ -23,29 +23,49 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-    const database = client.db("cardb");
-    const dbCollection = database.collection("cars");
+    const database = client.db("humanityHand");
+    const eventCollection = database.collection("events");
+    const eventRegisterCollection = database.collection("eventRegister");
     // GET API
-    app.get("/users", async (req, res) => {
-      const cursor = dbCollection.find({});
-      const users = await cursor.toArray();
-      res.send(users);
+    app.get("/events", async (req, res) => {
+      const cursor = eventCollection.find({});
+      const events = await cursor.toArray();
+      res.send(events);
     });
 
     //Single GET API
-    app.get("/users/:id", async (req, res) => {
+    app.get("/events/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await dbCollection.findOne(query);
+      const result = await eventCollection.findOne(query);
       console.log("id", result);
       res.json(result);
     });
 
+  //POST API
+  app.post("/events", async (req, res) => {
+    const newEvent = req.body;
+    const result = await eventCollection.insertOne(newEvent);
+    console.log("newEvent", req.body);
+    console.log("result", result);
+    res.json(result);
+  });
+
+    //Single GET API
+    app.get("/register/:email", async (req, res) => {
+      const email = req?.params?.email;
+      // console.log(email);
+      const query = { email: email };
+      const result = await eventRegisterCollection.find(query).toArray();
+      console.log("result", result);
+      res.json(result);
+    });
+
     //POST API
-    app.post("/users", async (req, res) => {
-      const newUser = req.body;
-      const result = await dbCollection.insertOne(newUser);
-      console.log("new User", req.body);
+    app.post("/register", async (req, res) => {
+      const newEventRegister = req.body;
+      const result = await eventRegisterCollection.insertOne(newEventRegister);
+      console.log("newEventRegister", req.body);
       console.log("result", result);
       res.json(result);
     });
@@ -54,7 +74,7 @@ async function run() {
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await dbCollection.deleteOne(query);
+      const result = await eventCollection.deleteOne(query);
       console.log("id", result);
       res.json(result);
     });
@@ -71,7 +91,7 @@ async function run() {
           img: req.body.img,
         },
       };
-      const result = await dbCollection.updateOne(filter, updateDoc, options);
+      const result = await eventCollection.updateOne(filter, updateDoc, options);
       console.log("id", result);
       res.json(result);
     });
@@ -82,11 +102,11 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Car Mac Server updated");
+  res.send("humanity Hand Server updated");
 });
 
 app.get("/hello", (req, res) => {
-  res.send("hello Car Mac Server");
+  res.send("hello humanity Hand Server");
 });
 
 app.listen(port, () => {
