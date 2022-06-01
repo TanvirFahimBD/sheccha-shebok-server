@@ -26,6 +26,7 @@ async function run() {
     const database = client.db("humanityHand");
     const eventCollection = database.collection("events");
     const eventRegisterCollection = database.collection("eventRegister");
+
     // events GET API
     app.get("/events", async (req, res) => {
       const cursor = eventCollection.find({});
@@ -51,7 +52,7 @@ async function run() {
     res.json(result);
   });
 
-    //register DELETE API
+    //events DELETE API
     app.delete("/events/:id", async (req, res) => {
       const id = req.params.id;
       console.log("id", id)
@@ -61,7 +62,7 @@ async function run() {
       res.json(result);
     });
 
-      //Single events PUT API
+      // events Single PUT API
       app.put("/events/:id", async (req, res) => {
         const id = req.params.id;
         const event = req.body;
@@ -88,6 +89,7 @@ async function run() {
       console.log("result", result);
       res.json(result);
     });
+  
     //register Single GET by email API
     app.get("/register/:email", async (req, res) => {
       const email = req?.params?.email;
