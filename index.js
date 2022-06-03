@@ -45,6 +45,16 @@ async function run() {
       res.json(result);
     });
 
+    //users -> admin PUT API
+    app.put("/users/admin", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const filter = {email: user.email}
+      const updateDoc = { $set:  {role: "admin"} }
+      const result = await usersCollection.updateOne(filter, updateDoc );
+      res.json(result);
+    });
+
     // events GET API
     app.get("/events", async (req, res) => {
       const cursor = eventCollection.find({});
