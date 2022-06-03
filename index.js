@@ -55,6 +55,18 @@ async function run() {
       res.json(result);
     });
 
+    // users GET API
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email: email}
+      const user = await  usersCollection.findOne(query);
+      let isAdmin = false
+      if(user?.role === 'admin'){
+        isAdmin = true
+      }
+      res.json({admin: isAdmin});
+    });
+
     // events GET API
     app.get("/events", async (req, res) => {
       const cursor = eventCollection.find({});
