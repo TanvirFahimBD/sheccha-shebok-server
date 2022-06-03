@@ -26,6 +26,24 @@ async function run() {
     const database = client.db("humanityHand");
     const eventCollection = database.collection("events");
     const eventRegisterCollection = database.collection("eventRegister");
+    const usersCollection = database.collection("users");
+
+    //users POST API
+    app.post("/users", async (req, res) => {
+      const newUser = req.body;
+      const result = await usersCollection.insertOne(newUser);
+      res.json(result);
+    });
+
+    //users PUT API
+    app.put("/users", async (req, res) => {
+      const user = req.body;
+      const filter = {email: user.email}
+      const options = {upsert: true}
+      const updateDoc = { $set:  user }
+      const result = await usersCollection.updateOne(filter, updateDoc , options);
+      res.json(result);
+    });
 
     // events GET API
     app.get("/events", async (req, res) => {
