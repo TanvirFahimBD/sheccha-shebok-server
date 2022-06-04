@@ -1,11 +1,26 @@
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
+const admin = require("firebase-admin");
 const ObjectId = require("mongodb").ObjectId;
 require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+// const serviceAccount = require("./humanity-hand-firebase-adminsdk.json")
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+
+// const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, '\n')
+
+// const { FIREBASE_SERVICE_ACCOUNT } = process.env
+// privateKey: FIREBASE_SERVICE_ACCOUNT[0] === '-' ? FIREBASE_SERVICE_ACCOUNT : JSON.parse(FIREBASE_SERVICE_ACCOUNT)
+// const serviceAccount = privateKey
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 //middleware
 app.use(cors());
@@ -19,6 +34,22 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+async function verifyToken(req, res, next){
+  if(req?.headers?.authorization?.startsWith('Bearer ')){
+    const token = req?.headers?.authorization?.split(' ')[1];
+    try{
+     const decodedUser = await admin.auth().verifyIdToken(token)
+     req.decodedEmail = decodedUser.email;
+    }
+    catch{
+
+    }
+  }
+  next();
+}
+
+
 
 async function run() {
   try {
@@ -46,13 +77,21 @@ async function run() {
     });
 
     //users -> admin PUT API
-    app.put("/users/admin", async (req, res) => {
-      const user = req.body;
-      console.log(user);
-      const filter = {email: user.email}
-      const updateDoc = { $set:  {role: "admin"} }
-      const result = await usersCollection.updateOne(filter, updateDoc );
-      res.json(result);
+    app.put("/users/admin", verifyToken , async (req, res) => {
+      const requester = req.decodedEmail; 
+      if(requester){
+        const requesterAccount = await usersCollection.findOne({email: requester});
+        if(requesterAccount.role === 'admin'){
+          const user = req.body;
+          const filter = {email: user.email}
+          const updateDoc = { $set:  {role: "admin"} }
+          const result = await usersCollection.updateOne(filter, updateDoc );
+          res.json(result);
+        }
+      }
+      else{
+        res.status(403).json({message: 'you do not have access to make admin'})
+      }     
     });
 
     // users GET API
@@ -123,11 +162,12 @@ async function run() {
       });
 
     //register Single GET API
-    app.get("/register", async (req, res) => {
+    app.get("/register", verifyToken, async (req, res) => {
       const query = {};
       const result = await eventRegisterCollection.find(query).toArray();
       // console.log("result", result);
       res.json(result);
+      console.log(req.decodedEmail);
     });
   
     //register Single GET by email API
