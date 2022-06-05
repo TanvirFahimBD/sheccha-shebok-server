@@ -3,20 +3,14 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 const ObjectId = require("mongodb").ObjectId;
+const stripe = require("stripe")(process.env.STRIPE_SECRET)
+
 require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// const serviceAccount = require("./humanity-hand-firebase-adminsdk.json")
-
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-
-// const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, '\n')
-
-// const { FIREBASE_SERVICE_ACCOUNT } = process.env
-// privateKey: FIREBASE_SERVICE_ACCOUNT[0] === '-' ? FIREBASE_SERVICE_ACCOUNT : JSON.parse(FIREBASE_SERVICE_ACCOUNT)
-// const serviceAccount = privateKey
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -50,7 +44,7 @@ async function verifyToken(req, res, next){
 }
 
 
-
+ 
 async function run() {
   try {
     await client.connect();
@@ -59,11 +53,34 @@ async function run() {
     const eventRegisterCollection = database.collection("eventRegister");
     const usersCollection = database.collection("users");
 
+    //payment POST API
+    app.post("/create-payment-intent",  async(req, res) => {
+      console.log(stripe)
+      const paymentInfo = req.body;
+      const amount = paymentInfo?.amount * 100;
+      // console.log(amount);
+      const paymentIntent = await stripe.paymentIntents.create({
+        currency: "usd",
+        amount: amount,
+        payment_method_types: ['card']
+      }); 
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      }); 
+    })
+
+
     //users POST API
     app.post("/users", async (req, res) => {
       const newUser = req.body;
       const result = await usersCollection.insertOne(newUser);
       res.json(result);
+    });
+
+    //users POST API
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection?.find({})?.toArray();
+      res.send(result);
     });
 
     //users PUT API
