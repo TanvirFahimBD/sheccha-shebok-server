@@ -53,6 +53,22 @@ async function run() {
     const eventCollection = database.collection("events");
     const eventRegisterCollection = database.collection("eventRegister");
     const usersCollection = database.collection("users");
+    const paymentCollection = database.collection("payment");
+
+    //payment POST API
+    app.post("/payment", async (req, res) => {
+      const newPayment = req.body;
+      const result = await paymentCollection.insertOne(newPayment);
+      res.json(result);
+    });
+
+    app.get("/payment/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email);
+      const query = {email: email}
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
 
       //payment POST API
       app.post("/create-payment-intent",  async (req, res) => {
@@ -78,7 +94,7 @@ async function run() {
       res.json(result);
     });
 
-    //users POST API
+    //users get API
     app.get("/users", async (req, res) => {
       const result = await usersCollection?.find({})?.toArray();
       res.send(result);
