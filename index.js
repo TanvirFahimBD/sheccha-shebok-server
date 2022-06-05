@@ -201,7 +201,7 @@ async function run() {
       const result = await eventRegisterCollection.find(query).toArray();
       // console.log("result", result);
       res.json(result);
-      console.log(req.decodedEmail);
+      // console.log(req.decodedEmail);
     });
   
     //register Single GET by email API
