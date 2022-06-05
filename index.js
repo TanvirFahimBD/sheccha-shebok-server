@@ -3,7 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 const ObjectId = require("mongodb").ObjectId;
-// STRIPE_SECRET=sk_test_51L6u7WFgsutIdwUumMVOPUwYY59uIRyXwS3QKLg7Prb1oG5X7FLsGcfXBAXYcgdCcHIAXvozu7WSWWcAZjCgtEXa00ORWdF8pa
+const fileUpload = require('express-fileupload')
+
 const stripe = require("stripe")('sk_test_51L6u7WFgsutIdwUumMVOPUwYY59uIRyXwS3QKLg7Prb1oG5X7FLsGcfXBAXYcgdCcHIAXvozu7WSWWcAZjCgtEXa00ORWdF8pa')
 
 require("dotenv").config();
@@ -20,6 +21,7 @@ admin.initializeApp({
 //middleware
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload())
 
 const uri =
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hqjnl.mongodb.net/?retryWrites=true&w=majority`;
@@ -30,14 +32,14 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-async function verifyToken(req, res, next){
-  if(req?.headers?.authorization?.startsWith('Bearer ')){
+async function verifyToken(req, res, next) {
+  if (req?.headers?.authorization?.startsWith('Bearer ')) {
     const token = req?.headers?.authorization?.split(' ')[1];
-    try{
-     const decodedUser = await admin.auth().verifyIdToken(token)
-     req.decodedEmail = decodedUser.email;
+    try {
+      const decodedUser = await admin.auth().verifyIdToken(token)
+      req.decodedEmail = decodedUser.email;
     }
-    catch{
+    catch {
 
     }
   }
@@ -45,7 +47,7 @@ async function verifyToken(req, res, next){
 }
 
 
- 
+
 async function run() {
   try {
     await client.connect();
@@ -54,6 +56,45 @@ async function run() {
     const eventRegisterCollection = database.collection("eventRegister");
     const usersCollection = database.collection("users");
     const paymentCollection = database.collection("payment");
+    const teamMembersCollection = database.collection("teamMembers");
+    
+    //payment GET API
+    app.get("/teamMembers", async (req, res) => {
+      const result = await teamMembersCollection.find({}).toArray();
+      res.json(result);
+    });
+
+    //register POST API
+    app.post("/teamMembers", async (req, res) => {
+      const index = req.body.index;
+      const key = req.body.key;
+      const date = req.body.date;
+      const desc = req.body.desc;
+      const title = req.body.title;
+      const name = req.body.name;
+      const email = req.body.email;
+      const img = req.files.image;
+      const imgData = img.data;
+      const encodedImg = imgData.toString('base64')
+      const imageBuffer = Buffer.from(encodedImg, 'base64')
+      const bnr = req.files.banner;
+      const bnrData = bnr.data;
+      const encodedBnr = bnrData.toString('base64')
+      const bannerBuffer = Buffer.from(encodedBnr, 'base64')
+      const teamMembers = {
+        index,
+        key,
+        date,
+        desc,
+        title,
+        name,
+        email,
+        image: imageBuffer,
+        banner: bannerBuffer
+      }
+      const result = await teamMembersCollection.insertOne(teamMembers);
+      res.json(result);
+    });
 
     //payment POST API
     app.post("/payment", async (req, res) => {
@@ -62,29 +103,30 @@ async function run() {
       res.json(result);
     });
 
+    //payment GET API
     app.get("/payment/:email", async (req, res) => {
       const email = req.params.email;
       // console.log(email);
-      const query = {email: email}
+      const query = { email: email }
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     });
 
-      //payment POST API
-      app.post("/create-payment-intent",  async (req, res) => {
-        const paymentInfo = req.body;
-        // console.log("server paymentInfo", paymentInfo)
-        const amount = paymentInfo?.amount * 100;
-        const paymentIntent = await stripe.paymentIntents.create({
-          currency: "usd",
-          amount: amount,
-          payment_method_types: ['card']
-        }); 
-        res.json({
-          clientSecret: paymentIntent.client_secret,
-        }); 
-        
-      })
+    //payment POST API
+    app.post("/create-payment-intent", async (req, res) => {
+      const paymentInfo = req.body;
+      // console.log("server paymentInfo", paymentInfo)
+      const amount = paymentInfo?.amount * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        currency: "usd",
+        amount: amount,
+        payment_method_types: ['card']
+      });
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+
+    })
 
 
     //users POST API
@@ -103,41 +145,41 @@ async function run() {
     //users PUT API
     app.put("/users", async (req, res) => {
       const user = req.body;
-      const filter = {email: user.email}
-      const options = {upsert: true}
-      const updateDoc = { $set:  user }
-      const result = await usersCollection.updateOne(filter, updateDoc , options);
+      const filter = { email: user.email }
+      const options = { upsert: true }
+      const updateDoc = { $set: user }
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
       res.json(result);
     });
 
     //users -> admin PUT API
-    app.put("/users/admin", verifyToken , async (req, res) => {
-      const requester = req.decodedEmail; 
-      if(requester){
-        const requesterAccount = await usersCollection.findOne({email: requester});
-        if(requesterAccount.role === 'admin'){
+    app.put("/users/admin", verifyToken, async (req, res) => {
+      const requester = req.decodedEmail;
+      if (requester) {
+        const requesterAccount = await usersCollection.findOne({ email: requester });
+        if (requesterAccount.role === 'admin') {
           const user = req.body;
-          const filter = {email: user.email}
-          const updateDoc = { $set:  {role: "admin"} }
-          const result = await usersCollection.updateOne(filter, updateDoc );
+          const filter = { email: user.email }
+          const updateDoc = { $set: { role: "admin" } }
+          const result = await usersCollection.updateOne(filter, updateDoc);
           res.json(result);
         }
       }
-      else{
-        res.status(403).json({message: 'you do not have access to make admin'})
-      }     
+      else {
+        res.status(403).json({ message: 'you do not have access to make admin' })
+      }
     });
 
     // users GET API
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {email: email}
-      const user = await  usersCollection.findOne(query);
+      const query = { email: email }
+      const user = await usersCollection.findOne(query);
       let isAdmin = false
-      if(user?.role === 'admin'){
+      if (user?.role === 'admin') {
         isAdmin = true
       }
-      res.json({admin: isAdmin});
+      res.json({ admin: isAdmin });
     });
 
     // events GET API
@@ -156,14 +198,14 @@ async function run() {
       res.json(result);
     });
 
-  // events POST API
-  app.post("/events", async (req, res) => {
-    const newEvent = req.body;
-    const result = await eventCollection.insertOne(newEvent);
-    // console.log("newEvent", req.body);
-    // console.log("result", result);
-    res.json(result);
-  });
+    // events POST API
+    app.post("/events", async (req, res) => {
+      const newEvent = req.body;
+      const result = await eventCollection.insertOne(newEvent);
+      // console.log("newEvent", req.body);
+      // console.log("result", result);
+      res.json(result);
+    });
 
     //events DELETE API
     app.delete("/events/:id", async (req, res) => {
@@ -175,25 +217,25 @@ async function run() {
       res.json(result);
     });
 
-      // events Single PUT API
-      app.put("/events/:id", async (req, res) => {
-        const id = req.params.id;
-        const event = req.body;
-        // console.log("event", event);
-        const filter = { _id: ObjectId(id) };
-        const options = { upsert: true };
-        const updateDoc = {
-          $set: {
-            title: event.title,
-            desc: event.desc,
-            banner: event.banner,
-            date: event.date,
-          },
-        };
-        const result = await eventCollection.updateOne(filter, updateDoc, options);
-        // console.log("result", result);
-        res.json(result);
-      });
+    // events Single PUT API
+    app.put("/events/:id", async (req, res) => {
+      const id = req.params.id;
+      const event = req.body;
+      // console.log("event", event);
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          title: event.title,
+          desc: event.desc,
+          banner: event.banner,
+          date: event.date,
+        },
+      };
+      const result = await eventCollection.updateOne(filter, updateDoc, options);
+      // console.log("result", result);
+      res.json(result);
+    });
 
     //register Single GET API
     app.get("/register", verifyToken, async (req, res) => {
@@ -203,7 +245,7 @@ async function run() {
       res.json(result);
       // console.log(req.decodedEmail);
     });
-  
+
     //register Single GET by email API
     app.get("/register/:email", async (req, res) => {
       const email = req?.params?.email;
@@ -215,10 +257,8 @@ async function run() {
 
     //register POST API
     app.post("/register", async (req, res) => {
-      const newEventRegister = req.body;
-      const result = await eventRegisterCollection.insertOne(newEventRegister);
-      // console.log("newEventRegister", req.body);
-      // console.log("result", result);
+      const newRegister = req.body;
+      const result = await eventRegisterCollection.insertOne(newRegister);
       res.json(result);
     });
 
@@ -232,31 +272,42 @@ async function run() {
       res.json(result);
     });
 
- // events Single PUT API
- app.put("/register/:id", async (req, res) => {
-  const id = req.params.id;
-  const event = req.body;
-  const keys = event.key;
-  // console.log("event", event);
-  // console.log("key", keys);
-  const filter = { key :  keys};
-  const options = { upsert: true };
-  const updateDoc = {
-    $set: {
-      title: event.title,
-      desc: event.desc,
-      banner: event.banner,
-      date: event.date,
-    },
-  };
-  const result = await eventRegisterCollection.updateMany(filter, updateDoc, options);
-  // console.log("result", result);
-  res.json(result);
+
+    //register DELETE API
+    app.delete("/register/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log("id", id)
+      const query = { _id: ObjectId(id) };
+      const result = await eventRegisterCollection.deleteOne(query);
+      // console.log("id", result);
+      res.json(result);
+    });
+
+    // events Single PUT API
+    app.put("/register/:id", async (req, res) => {
+      const id = req.params.id;
+      const event = req.body;
+      const keys = event.key;
+      // console.log("event", event);
+      // console.log("key", keys);
+      const filter = { key: keys };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          title: event.title,
+          desc: event.desc,
+          banner: event.banner,
+          date: event.date,
+        },
+      };
+      const result = await eventRegisterCollection.updateMany(filter, updateDoc, options);
+      // console.log("result", result);
+      res.json(result);
 
 
-  
 
-});
+
+    });
 
   } finally {
     // await client.close();
