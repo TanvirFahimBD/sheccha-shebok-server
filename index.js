@@ -90,7 +90,7 @@ async function run() {
     app.get("/review/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email }
-      const result = await reviewCollection.findOne(query);
+      const result = await reviewCollection.find(query).toArray();
       res.send(result);
     });
 
