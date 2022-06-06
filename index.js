@@ -205,16 +205,40 @@ async function run() {
       }
     });
 
+    //users -> volunteer PUT API
+    app.put("/users/volunteer", verifyToken, async (req, res) => {
+      const requesterEmail = req.decodedEmail;
+      if (requesterEmail) {
+        const requesterAcc = await usersCollection.findOne({ email: requesterEmail });
+        if (requesterAcc.role === 'admin') {
+          const userNow = req.body;
+          // console.log(userNow);
+          const filter = { email: userNow.email }
+          const updateDoc = { $set: { role: "volunteer" } }
+          const result = await usersCollection.updateOne(filter, updateDoc);
+          res.json(result);
+        }
+      }
+      else {
+        res.status(403).json({ message: 'you do not have access to make volunteer' })
+      }
+    }
+    );
+
     // users single GET API
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email }
       const user = await usersCollection.findOne(query);
       let isAdmin = false
+      let isVolunteer = false
       if (user?.role === 'admin') {
         isAdmin = true
       }
-      res.json({ admin: isAdmin });
+      if (user?.role === 'volunteer') {
+        isVolunteer = true
+      }
+      res.json([{ admin: isAdmin }, {volunteer: isVolunteer}]);
     });
 
     // events GET API
