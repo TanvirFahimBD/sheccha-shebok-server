@@ -57,14 +57,50 @@ async function run() {
     const usersCollection = database.collection("users");
     const paymentCollection = database.collection("payment");
     const teamMembersCollection = database.collection("teamMembers");
+    const reviewCollection = database.collection("reviews");
+    const noticeCollection = database.collection("notices");
     
-    //payment GET API
+    //notices POST API
+    app.post("/notices", async (req, res) => {
+      const newNotice = req.body;
+      const result = await noticeCollection.insertOne(newNotice);
+      res.json(result);
+    });
+
+    //notices GET API
+    app.get("/notices", async (req, res) => {
+      const result = await noticeCollection.find({}).toArray();
+      res.json(result);
+    });
+
+    //review POST API
+    app.post("/review", async (req, res) => {
+      const newReview = req.body;
+      const result = await reviewCollection.insertOne(newReview);
+      res.json(result);
+    });
+
+    //review GET API
+    app.get("/review", async (req, res) => {
+      const result = await reviewCollection.find({}).toArray();
+      res.json(result);
+    });
+
+    //review single GET API
+    app.get("/review/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email }
+      const result = await reviewCollection.findOne(query);
+      res.send(result);
+    });
+
+    //teamMembers GET API
     app.get("/teamMembers", async (req, res) => {
       const result = await teamMembersCollection.find({}).toArray();
       res.json(result);
     });
 
-    //register POST API
+    //teamMembers POST API
     app.post("/teamMembers", async (req, res) => {
       const index = req.body.index;
       const key = req.body.key;
@@ -128,7 +164,6 @@ async function run() {
 
     })
 
-
     //users POST API
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -170,7 +205,7 @@ async function run() {
       }
     });
 
-    // users GET API
+    // users single GET API
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email }
@@ -237,7 +272,7 @@ async function run() {
       res.json(result);
     });
 
-    //register Single GET API
+    //register GET API
     app.get("/register", verifyToken, async (req, res) => {
       const query = {};
       const result = await eventRegisterCollection.find(query).toArray();
@@ -272,18 +307,7 @@ async function run() {
       res.json(result);
     });
 
-
-    //register DELETE API
-    app.delete("/register/:id", async (req, res) => {
-      const id = req.params.id;
-      // console.log("id", id)
-      const query = { _id: ObjectId(id) };
-      const result = await eventRegisterCollection.deleteOne(query);
-      // console.log("id", result);
-      res.json(result);
-    });
-
-    // events Single PUT API
+    // register Single PUT API
     app.put("/register/:id", async (req, res) => {
       const id = req.params.id;
       const event = req.body;
