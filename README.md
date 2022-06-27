@@ -1,6 +1,6 @@
-### Live Site: 
+### Live Site: https://humanity-hand.web.app/
 
-### Live Server(API): 
+### Live Server(API): https://tranquil-cliffs-23009.herokuapp.com/
 
 ---
 
