@@ -306,18 +306,18 @@ async function run() {
       res.json(result);
     });
 
-    //register POST API
-    app.post("/register", async (req, res) => {
-      const newRegister = req.body;
-      const result = await eventRegisterCollection.insertOne(newRegister);
-      res.json(result);
-    });
-
     //register DELETE API
     app.delete("/register/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await eventRegisterCollection.deleteOne(query);
+      res.json(result);
+    });
+
+    //register POST API
+    app.post("/register", async (req, res) => {
+      const newRegister = req.body;
+      const result = await eventRegisterCollection.insertOne(newRegister);
       res.json(result);
     });
 
