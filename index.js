@@ -46,8 +46,6 @@ async function verifyToken(req, res, next) {
   next();
 }
 
-
-
 async function run() {
   try {
     await client.connect();
@@ -59,7 +57,7 @@ async function run() {
     const teamMembersCollection = database.collection("teamMembers");
     const reviewCollection = database.collection("reviews");
     const noticeCollection = database.collection("notices");
-    
+
     //notices POST API
     app.post("/notices", async (req, res) => {
       const newNotice = req.body;
@@ -142,7 +140,6 @@ async function run() {
     //payment GET API
     app.get("/payment/:email", async (req, res) => {
       const email = req.params.email;
-      // console.log(email);
       const query = { email: email }
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
@@ -151,7 +148,6 @@ async function run() {
     //payment POST API
     app.post("/create-payment-intent", async (req, res) => {
       const paymentInfo = req.body;
-      // console.log("server paymentInfo", paymentInfo)
       const amount = paymentInfo?.amount * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         currency: "usd",
@@ -212,7 +208,6 @@ async function run() {
         const requesterAcc = await usersCollection.findOne({ email: requesterEmail });
         if (requesterAcc.role === 'admin') {
           const userNow = req.body;
-          // console.log(userNow);
           const filter = { email: userNow.email }
           const updateDoc = { $set: { role: "volunteer" } }
           const result = await usersCollection.updateOne(filter, updateDoc);
@@ -238,7 +233,7 @@ async function run() {
       if (user?.role === 'volunteer') {
         isVolunteer = true
       }
-      res.json([{ admin: isAdmin }, {volunteer: isVolunteer}]);
+      res.json([{ admin: isAdmin }, { volunteer: isVolunteer }]);
     });
 
     // events GET API
@@ -253,7 +248,6 @@ async function run() {
       const id = req?.params?.id;
       const query = { _id: ObjectId(id) };
       const result = await eventCollection.findOne(query);
-      // console.log("id", result);
       res.json(result);
     });
 
@@ -261,18 +255,14 @@ async function run() {
     app.post("/events", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollection.insertOne(newEvent);
-      // console.log("newEvent", req.body);
-      // console.log("result", result);
       res.json(result);
     });
 
     //events DELETE API
     app.delete("/events/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log("id", id)
       const query = { _id: ObjectId(id) };
       const result = await eventCollection.deleteOne(query);
-      // console.log("id", result);
       res.json(result);
     });
 
@@ -280,7 +270,6 @@ async function run() {
     app.put("/events/:id", async (req, res) => {
       const id = req.params.id;
       const event = req.body;
-      // console.log("event", event);
       const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updateDoc = {
@@ -292,7 +281,6 @@ async function run() {
         },
       };
       const result = await eventCollection.updateOne(filter, updateDoc, options);
-      // console.log("result", result);
       res.json(result);
     });
 
@@ -300,9 +288,7 @@ async function run() {
     app.get("/register", verifyToken, async (req, res) => {
       const query = {};
       const result = await eventRegisterCollection.find(query).toArray();
-      // console.log("result", result);
       res.json(result);
-      // console.log(req.decodedEmail);
     });
 
     //register Single GET by email API
@@ -310,7 +296,6 @@ async function run() {
       const email = req?.params?.email;
       const query = { email: email };
       const result = await eventRegisterCollection.find(query).toArray();
-      // console.log("result", result);
       res.json(result);
     });
 
@@ -324,10 +309,8 @@ async function run() {
     //register DELETE API
     app.delete("/register/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log("id", id)
       const query = { _id: ObjectId(id) };
       const result = await eventRegisterCollection.deleteOne(query);
-      // console.log("id", result);
       res.json(result);
     });
 
@@ -336,8 +319,6 @@ async function run() {
       const id = req.params.id;
       const event = req.body;
       const keys = event.key;
-      // console.log("event", event);
-      // console.log("key", keys);
       const filter = { key: keys };
       const options = { upsert: true };
       const updateDoc = {
@@ -349,12 +330,7 @@ async function run() {
         },
       };
       const result = await eventRegisterCollection.updateMany(filter, updateDoc, options);
-      // console.log("result", result);
       res.json(result);
-
-
-
-
     });
 
   } finally {
@@ -365,10 +341,6 @@ run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("humanity Hand Server updated");
-});
-
-app.get("/hello", (req, res) => {
-  res.send("hello humanity Hand Server");
 });
 
 app.listen(port, () => {
