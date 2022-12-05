@@ -58,6 +58,7 @@ async function run() {
     const reviewCollection = database.collection("reviews");
     const noticeCollection = database.collection("notices");
 
+    //*********** notices ************** 
     //notices POST API
     app.post("/notices", async (req, res) => {
       const newNotice = req.body;
@@ -71,6 +72,7 @@ async function run() {
       res.json(result);
     });
 
+    //*********** review ************** 
     //review POST API
     app.post("/review", async (req, res) => {
       const newReview = req.body;
@@ -92,6 +94,7 @@ async function run() {
       res.send(result);
     });
 
+    //*********** teamMembers ************** 
     //teamMembers GET API
     app.get("/teamMembers", async (req, res) => {
       const result = await teamMembersCollection.find({}).toArray();
@@ -130,6 +133,7 @@ async function run() {
       res.json(result);
     });
 
+    //*********** payment ************** 
     //payment POST API
     app.post("/payment", async (req, res) => {
       const newPayment = req.body;
@@ -160,6 +164,7 @@ async function run() {
 
     })
 
+    //*********** users ************** 
     //users POST API
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -236,6 +241,7 @@ async function run() {
       res.json([{ admin: isAdmin }, { volunteer: isVolunteer }]);
     });
 
+    //*********** events ************** 
     // events GET API
     app.get("/events", async (req, res) => {
       const cursor = eventCollection.find({});
@@ -284,6 +290,7 @@ async function run() {
       res.json(result);
     });
 
+    //*********** register ************** 
     //register GET API
     app.get("/register", verifyToken, async (req, res) => {
       const query = {};
