@@ -14,9 +14,9 @@
 
 <li>Users can find Can Find or Search Events, Can Donate, View own Dashboard, Update own profile information 
  </li>
-<li>Can Find or Search Events, Can Register on a event, See all registered events, Get event updated notices, Add review and see review, Update own profile information 
+<li>Volunteers can find or Search Events, Can Register on a event, See all registered events, Get event updated notices, Add review and see review, Update own profile information 
 </li>
-<li>Add Notices, Add New events, Update Events, Delete Events, Add volunteer role and delete volunteer, Add a new admin role, Add team member, Update own profile information 
+<li>Admin can add Notices, Add New events, Update Events, Delete Events, Add volunteer role and delete volunteer, Add a new admin role, Add team member, Update own profile information 
 </li>
 <li>Random Route Hit maintain 404! </li>
 
