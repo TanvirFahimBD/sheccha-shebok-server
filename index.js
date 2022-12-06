@@ -1,8 +1,7 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
-const ObjectId = require("mongodb").ObjectId;
 const fileUpload = require('express-fileupload')
 
 const stripe = require("stripe")('sk_test_51L6u7WFgsutIdwUumMVOPUwYY59uIRyXwS3QKLg7Prb1oG5X7FLsGcfXBAXYcgdCcHIAXvozu7WSWWcAZjCgtEXa00ORWdF8pa')
@@ -38,12 +37,12 @@ async function verifyToken(req, res, next) {
     try {
       const decodedUser = await admin.auth().verifyIdToken(token)
       req.decodedEmail = decodedUser.email;
+      next();
     }
     catch {
-
+      res.status(401).send({ message: 'Unauthorized' })
     }
   }
-  next();
 }
 
 async function run() {
@@ -54,7 +53,6 @@ async function run() {
     const eventRegisterCollection = database.collection("eventRegister");
     const usersCollection = database.collection("users");
     const paymentCollection = database.collection("payment");
-    const teamMembersCollection = database.collection("teamMembers");
     const reviewCollection = database.collection("reviews");
     const noticeCollection = database.collection("notices");
 
@@ -94,45 +92,6 @@ async function run() {
       res.send(result);
     });
 
-    //*********** teamMembers ************** 
-    //teamMembers GET API
-    app.get("/teamMembers", async (req, res) => {
-      const result = await teamMembersCollection.find({}).toArray();
-      res.json(result);
-    });
-
-    //teamMembers POST API
-    app.post("/teamMembers", async (req, res) => {
-      const index = req.body.index;
-      const key = req.body.key;
-      const date = req.body.date;
-      const desc = req.body.desc;
-      const title = req.body.title;
-      const name = req.body.name;
-      const email = req.body.email;
-      const img = req.files.image;
-      const imgData = img.data;
-      const encodedImg = imgData.toString('base64')
-      const imageBuffer = Buffer.from(encodedImg, 'base64')
-      const bnr = req.files.banner;
-      const bnrData = bnr.data;
-      const encodedBnr = bnrData.toString('base64')
-      const bannerBuffer = Buffer.from(encodedBnr, 'base64')
-      const teamMembers = {
-        index,
-        key,
-        date,
-        desc,
-        title,
-        name,
-        email,
-        image: imageBuffer,
-        banner: bannerBuffer
-      }
-      const result = await teamMembersCollection.insertOne(teamMembers);
-      res.json(result);
-    });
-
     //*********** payment ************** 
     //payment POST API
     app.post("/payment", async (req, res) => {
@@ -146,6 +105,12 @@ async function run() {
       const email = req.params.email;
       const query = { email: email }
       const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //payment GET API
+    app.get("/payment", async (req, res) => {
+      const result = await paymentCollection.find({}).toArray();
       res.send(result);
     });
 
@@ -178,52 +143,13 @@ async function run() {
       res.send(result);
     });
 
-    //users PUT API
-    app.put("/users", async (req, res) => {
-      const user = req.body;
-      const filter = { email: user.email }
-      const options = { upsert: true }
-      const updateDoc = { $set: user }
-      const result = await usersCollection.updateOne(filter, updateDoc, options);
-      res.json(result);
+    //users get single API
+    app.get("/users/account/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) }
+      const result = await usersCollection.findOne(query);
+      res.send(result);
     });
-
-    //users -> admin PUT API
-    app.put("/users/admin", verifyToken, async (req, res) => {
-      const requester = req.decodedEmail;
-      if (requester) {
-        const requesterAccount = await usersCollection.findOne({ email: requester });
-        if (requesterAccount.role === 'admin') {
-          const user = req.body;
-          const filter = { email: user.email }
-          const updateDoc = { $set: { role: "admin" } }
-          const result = await usersCollection.updateOne(filter, updateDoc);
-          res.json(result);
-        }
-      }
-      else {
-        res.status(403).json({ message: 'you do not have access to make admin' })
-      }
-    });
-
-    //users -> volunteer PUT API
-    app.put("/users/volunteer", verifyToken, async (req, res) => {
-      const requesterEmail = req.decodedEmail;
-      if (requesterEmail) {
-        const requesterAcc = await usersCollection.findOne({ email: requesterEmail });
-        if (requesterAcc.role === 'admin') {
-          const userNow = req.body;
-          const filter = { email: userNow.email }
-          const updateDoc = { $set: { role: "volunteer" } }
-          const result = await usersCollection.updateOne(filter, updateDoc);
-          res.json(result);
-        }
-      }
-      else {
-        res.status(403).json({ message: 'you do not have access to make volunteer' })
-      }
-    }
-    );
 
     // users single GET API
     app.get("/users/:email", async (req, res) => {
@@ -239,6 +165,43 @@ async function run() {
         isVolunteer = true
       }
       res.json([{ admin: isAdmin }, { volunteer: isVolunteer }]);
+    });
+
+    //users PUT API
+    app.put("/users", async (req, res) => {
+      const user = req.body;
+      const filter = { email: user.email }
+      const options = { upsert: true }
+      const updateDoc = { $set: user }
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      res.json(result);
+    });
+
+    //users -> role PUT API
+    app.put("/users/role", verifyToken, async (req, res) => {
+      const user = req.body;
+      const requester = req.decodedEmail;
+      if (requester) {
+        const requesterAccount = await usersCollection.findOne({ email: requester });
+        if (requesterAccount.role === 'admin') {
+          const options = { upsert: false }
+          const filter = { email: user.email }
+          const updateDoc = { $set: { role: user.role } }
+          const result = await usersCollection.updateOne(filter, updateDoc, options);
+          res.json(result);
+        }
+      }
+      else {
+        res.status(401).json({ message: 'Unauthorized access' })
+      }
+    });
+
+    //users delete API
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.json(result);
     });
 
     //*********** events ************** 
@@ -298,11 +261,18 @@ async function run() {
       res.json(result);
     });
 
+    //register Single GET by id API
+    app.get("/register/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventRegisterCollection.findOne(query);
+      res.json(result);
+    });
+
     //register Single GET by email API
-    app.get("/register/:email", async (req, res) => {
-      const email = req?.params?.email;
-      const query = { email: email };
-      const result = await eventRegisterCollection.find(query).toArray();
+    app.get("/register/event/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await eventRegisterCollection.find({ email: email }).toArray();
       res.json(result);
     });
 
