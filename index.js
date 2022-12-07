@@ -106,6 +106,7 @@ async function run() {
       res.send(result);
     });
 
+    //*********** STRIPE ************** 
     //payment POST API
     app.post("/create-payment-intent", async (req, res) => {
       const paymentInfo = req.body;
