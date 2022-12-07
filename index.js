@@ -1,21 +1,13 @@
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+require("dotenv").config();
 const admin = require("firebase-admin");
 const fileUpload = require('express-fileupload')
-
 const stripe = require("stripe")('sk_test_51L6u7WFgsutIdwUumMVOPUwYY59uIRyXwS3QKLg7Prb1oG5X7FLsGcfXBAXYcgdCcHIAXvozu7WSWWcAZjCgtEXa00ORWdF8pa')
 
-require("dotenv").config();
-
-const app = express();
 const port = process.env.PORT || 5000;
-
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+const app = express();
 
 //middleware
 app.use(cors());
