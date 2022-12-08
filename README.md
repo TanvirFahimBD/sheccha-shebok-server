@@ -1,4 +1,4 @@
-DISCLAIMER - Login & Admin access-
+IMPORTANT - Login & Admin access-
 email: admin123@gmail.com,
 password: admin123
 
