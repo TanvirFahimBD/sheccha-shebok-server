@@ -3,8 +3,10 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const admin = require("firebase-admin");
-const fileUpload = require('express-fileupload')
-const stripe = require("stripe")('sk_test_51L6u7WFgsutIdwUumMVOPUwYY59uIRyXwS3QKLg7Prb1oG5X7FLsGcfXBAXYcgdCcHIAXvozu7WSWWcAZjCgtEXa00ORWdF8pa')
+const fileUpload = require("express-fileupload");
+const stripe = require("stripe")(
+  "sk_test_51L6u7WFgsutIdwUumMVOPUwYY59uIRyXwS3QKLg7Prb1oG5X7FLsGcfXBAXYcgdCcHIAXvozu7WSWWcAZjCgtEXa00ORWdF8pa"
+);
 
 const port = process.env.PORT || 5000;
 const app = express();
@@ -12,10 +14,9 @@ const app = express();
 //middleware
 app.use(cors());
 app.use(express.json());
-app.use(fileUpload())
+app.use(fileUpload());
 
-const uri =
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hqjnl.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hqjnl.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -24,15 +25,14 @@ const client = new MongoClient(uri, {
 });
 
 async function verifyToken(req, res, next) {
-  if (req?.headers?.authorization?.startsWith('Bearer ')) {
-    const token = req?.headers?.authorization?.split(' ')[1];
+  if (req?.headers?.authorization?.startsWith("Bearer ")) {
+    const token = req?.headers?.authorization?.split(" ")[1];
     try {
-      const decodedUser = await admin.auth().verifyIdToken(token)
+      const decodedUser = await admin.auth().verifyIdToken(token);
       req.decodedEmail = decodedUser.email;
       next();
-    }
-    catch {
-      res.status(401).send({ message: 'Unauthorized' })
+    } catch {
+      res.status(401).send({ message: "Unauthorized" });
     }
   }
 }
@@ -48,7 +48,7 @@ async function run() {
     const reviewCollection = database.collection("reviews");
     const noticeCollection = database.collection("notices");
 
-    //*********** notices ************** 
+    //*********** notices **************
     //notices POST API
     app.post("/notices", async (req, res) => {
       const newNotice = req.body;
@@ -62,7 +62,7 @@ async function run() {
       res.json(result);
     });
 
-    //*********** review ************** 
+    //*********** review **************
     //review POST API
     app.post("/review", async (req, res) => {
       const newReview = req.body;
@@ -79,12 +79,12 @@ async function run() {
     //review single GET API
     app.get("/review/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email }
+      const query = { email: email };
       const result = await reviewCollection.find(query).toArray();
       res.send(result);
     });
 
-    //*********** payment ************** 
+    //*********** payment **************
     //payment POST API
     app.post("/payment", async (req, res) => {
       const newPayment = req.body;
@@ -95,7 +95,7 @@ async function run() {
     //payment GET API
     app.get("/payment/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email }
+      const query = { email: email };
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     });
@@ -106,7 +106,7 @@ async function run() {
       res.send(result);
     });
 
-    //*********** STRIPE ************** 
+    //*********** STRIPE **************
     //payment POST API
     app.post("/create-payment-intent", async (req, res) => {
       const paymentInfo = req.body;
@@ -114,15 +114,14 @@ async function run() {
       const paymentIntent = await stripe.paymentIntents.create({
         currency: "usd",
         amount: amount,
-        payment_method_types: ['card']
+        payment_method_types: ["card"],
       });
       res.json({
         clientSecret: paymentIntent.client_secret,
       });
+    });
 
-    })
-
-    //*********** users ************** 
+    //*********** users **************
     //users POST API
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -139,7 +138,7 @@ async function run() {
     //users get single API
     app.get("/users/account/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) }
+      const query = { _id: ObjectId(id) };
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
@@ -147,15 +146,15 @@ async function run() {
     // users single GET API
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email }
+      const query = { email: email };
       const user = await usersCollection.findOne(query);
-      let isAdmin = false
-      let isVolunteer = false
-      if (user?.role === 'admin') {
-        isAdmin = true
+      let isAdmin = false;
+      let isVolunteer = false;
+      if (user?.role === "admin") {
+        isAdmin = true;
       }
-      if (user?.role === 'volunteer') {
-        isVolunteer = true
+      if (user?.role === "volunteer") {
+        isVolunteer = true;
       }
       res.json([{ admin: isAdmin }, { volunteer: isVolunteer }]);
     });
@@ -163,10 +162,14 @@ async function run() {
     //users PUT API
     app.put("/users", async (req, res) => {
       const user = req.body;
-      const filter = { email: user.email }
-      const options = { upsert: true }
-      const updateDoc = { $set: user }
-      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      const filter = { email: user.email };
+      const options = { upsert: true };
+      const updateDoc = { $set: user };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.json(result);
     });
 
@@ -175,17 +178,22 @@ async function run() {
       const user = req.body;
       const requester = req.decodedEmail;
       if (requester) {
-        const requesterAccount = await usersCollection.findOne({ email: requester });
-        if (requesterAccount.role === 'admin') {
-          const options = { upsert: false }
-          const filter = { email: user.email }
-          const updateDoc = { $set: { role: user.role } }
-          const result = await usersCollection.updateOne(filter, updateDoc, options);
+        const requesterAccount = await usersCollection.findOne({
+          email: requester,
+        });
+        if (requesterAccount.role === "admin") {
+          const options = { upsert: false };
+          const filter = { email: user.email };
+          const updateDoc = { $set: { role: user.role } };
+          const result = await usersCollection.updateOne(
+            filter,
+            updateDoc,
+            options
+          );
           res.json(result);
         }
-      }
-      else {
-        res.status(401).json({ message: 'Unauthorized access' })
+      } else {
+        res.status(401).json({ message: "Unauthorized access" });
       }
     });
 
@@ -197,7 +205,7 @@ async function run() {
       res.json(result);
     });
 
-    //*********** events ************** 
+    //*********** events **************
     // events GET API
     app.get("/events", async (req, res) => {
       const cursor = eventCollection.find({});
@@ -242,11 +250,15 @@ async function run() {
           date: event.date,
         },
       };
-      const result = await eventCollection.updateOne(filter, updateDoc, options);
+      const result = await eventCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.json(result);
     });
 
-    //*********** register ************** 
+    //*********** register **************
     //register GET API
     app.get("/register", verifyToken, async (req, res) => {
       const query = {};
@@ -265,7 +277,9 @@ async function run() {
     //register Single GET by email API
     app.get("/register/event/:email", async (req, res) => {
       const email = req.params.email;
-      const result = await eventRegisterCollection.find({ email: email }).toArray();
+      const result = await eventRegisterCollection
+        .find({ email: email })
+        .toArray();
       res.json(result);
     });
 
@@ -299,10 +313,13 @@ async function run() {
           date: event.date,
         },
       };
-      const result = await eventRegisterCollection.updateMany(filter, updateDoc, options);
+      const result = await eventRegisterCollection.updateMany(
+        filter,
+        updateDoc,
+        options
+      );
       res.json(result);
     });
-
   } finally {
     // await client.close();
   }
@@ -310,9 +327,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("humanity Hand Server updated");
+  res.send("Humanity Hand Server Live");
 });
 
 app.listen(port, () => {
-  console.log("listing port", port);
+  console.log(`Listening from port ${port}`);
 });
