@@ -4,7 +4,7 @@ password: admin123
 
 ## Website name: Sheccha Shebok
 
-### Live Website: https://humanity-hand.web.app/
+### Live Website: https://sheccha-shebok.netlify.app/
 
 ---
 
@@ -37,4 +37,4 @@ password: admin123
 
 ---
 
-### Live Server(API): https://sheccha-shebok-server.up.railway.app/
+### Live Server(API): https://sheccha-shebok-server.onrender.com/
