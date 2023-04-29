@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "name": "mongo-crud-server",
+  "builds": [{ "src": "app.js", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "/app.js" }]
+}
